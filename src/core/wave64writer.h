@@ -44,11 +44,10 @@ public:
 	void WriteData(void *Data, std::streamsize Length);
 private:
 	ffms_fstream WavFile;
-	int32_t BitsPerSample;
+	int32_t BytesPerSample;
 	int32_t Channels;
 	uint32_t SamplesPerSec;
 	uint64_t BytesWritten;
-	uint32_t HeaderSize;
 	bool IsFloat;
 
 	void WriteHeader(bool Initial, bool IsFloat);

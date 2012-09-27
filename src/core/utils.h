@@ -34,9 +34,6 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
-#ifdef FFMS_USE_POSTPROC
-#include <libpostproc/postprocess.h>
-#endif // FFMS_USE_POSTPROC
 }
 
 // must be included after ffmpeg headers
@@ -52,6 +49,10 @@ extern "C" {
 #	include <initguid.h>
 #	include "CoParser.h"
 #	include "guids.h"
+#endif
+
+#ifdef __MINGW32__
+#include <ext/stdio_filebuf.h>
 #endif
 
 #define FFMS_GET_VECTOR_PTR(v) (((v).size() ? &(v)[0] : NULL))
@@ -163,9 +164,13 @@ public:
 	}
 };
 
-class ffms_fstream : public std::fstream {
+struct ffms_fstream : public std::fstream {
+#ifdef __MINGW32__
+private:
+	__gnu_cxx::stdio_filebuf<char> filebuf;
 public:
-	void open(const char *filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out);
+	bool is_open() const { return filebuf.is_open(); }
+#endif
 	ffms_fstream(const char *filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out);
 };
 
@@ -224,5 +229,6 @@ CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, FFMS_Sources SourceM
 #endif // HAALISOURCE
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext);
 
+void FlushBuffers(AVCodecContext *CodecContext);
 
 #endif

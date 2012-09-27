@@ -39,7 +39,7 @@
 #  define VERSION_CHECK(LIB, cmp, major, minor, micro, u1, u2, u3) ((LIB) cmp (AV_VERSION_INT(major, minor, micro)))
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW64_VERSION_MAJOR)
 #	define snprintf _snprintf
 #	ifdef __MINGW32__
 #		define fseeko fseeko64
@@ -60,6 +60,9 @@
 #	endif
 #	if VERSION_CHECK(LIBAVFORMAT_VERSION_INT, <, 53, 17, 0, 53, 25, 0)
 #		define avformat_close_input(c) av_close_input_file(*c)
+#	endif
+#	if (LIBAVFORMAT_VERSION_INT) < (AV_VERSION_INT(54,2,0))
+#		define AV_DISPOSITION_ATTACHED_PIC 0xBEEFFACE
 #	endif
 #endif
 
@@ -84,14 +87,29 @@
 #	else
 #		define FFMS_CALCULATE_DELAY (CodecContext->has_b_frames + (CodecContext->thread_count - 1))
 #	endif
+#   if VERSION_CHECK(LIBAVCODEC_VERSION_INT, <, 54, 25, 0, 54, 51, 100)
+#       define FFMS_ID(x) (CODEC_ID_##x)
+#       define FFMS_CodecID CodecID
+#   else
+#       define FFMS_ID(x) (AV_CODEC_ID_##x)
+#       define FFMS_CodecID AVCodecID
+#       undef CodecID
+#   endif
 #endif
 
 #ifdef LIBAVUTIL_VERSION_INT
 #	if (LIBAVUTIL_VERSION_INT) < (AV_VERSION_INT(51, 1, 0))
 #		define av_get_picture_type_char av_get_pict_type_char
+#		define AV_PICTURE_TYPE_B FF_B_TYPE
 #	endif
 #	if (LIBAVUTIL_VERSION_INT) < (AV_VERSION_INT(51, 2, 0))
 #		define av_get_pix_fmt_name avcodec_get_pix_fmt_name
+#	endif
+#	if (LIBAVUTIL_VERSION_INT) < (AV_VERSION_INT(51, 4, 0))
+#		define av_get_bytes_per_sample(a) (av_get_bits_per_sample_fmt(a) / 8)
+#	endif
+#	if (LIBAVUTIL_VERSION_INT) < (AV_VERSION_INT(51, 12, 0))
+#		define av_set_opt_int(o,n,v,s) av_set_int(o,n,v)
 #	endif
 #endif
 

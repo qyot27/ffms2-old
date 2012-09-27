@@ -91,7 +91,7 @@ protected:
 	// Next packet to be read
 	size_t PacketNumber;
 	// Current audio frame
-	TFrameInfo *CurrentFrame;
+	const TFrameInfo *CurrentFrame;
 	// Track which this corresponds to
 	int TrackNumber;
 	// Number of packets which the demuxer requires to know where it is
@@ -125,6 +125,8 @@ class FFLAVFAudio : public FFMS_AudioSource {
 	bool ReadPacket(AVPacket *);
 	void FreePacket(AVPacket *);
 	void Seek();
+
+	int64_t FrameTS(size_t Packet) const;
 
 public:
 	FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);

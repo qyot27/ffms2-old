@@ -119,7 +119,7 @@ int main (...) {
 	
 	/* Get the first frame for examination so we know what we're getting. This is required
 	because resolution and colorspace is a per frame property and NOT global for the video. */
-	const FFMS_Frame *propframe = FFMS_GetFrame(videosource, 0, errinfo);
+	const FFMS_Frame *propframe = FFMS_GetFrame(videosource, 0, &amp;errinfo);
 
 	/* Now you may want to do something with the info; particularly interesting values are:
 	propframe-&gt;EncodedWidth; (frame width in pixels)
@@ -137,10 +137,10 @@ int main (...) {
 	
 	/* A -1 terminated list of the acceptable output formats. */
 	int pixfmts[2];
-	pixfmt[0] = FFMS_GetPixFmt("bgra");
-	pixfmt[1] = -1;
+	pixfmts[0] = FFMS_GetPixFmt("bgra");
+	pixfmts[1] = -1;
 	
-	if (FFMS_SetOutputFormatV2(videosource, pixfmt, propframe-&gt;EncodedWidth, propframe-&gt;EncodedHeight, FFMS_RESIZER_BICUBIC, &amp;errinfo)) {
+	if (FFMS_SetOutputFormatV2(videosource, pixfmts, propframe-&gt;EncodedWidth, propframe-&gt;EncodedHeight, FFMS_RESIZER_BICUBIC, &amp;errinfo)) {
 		/* handle error */
 	}
 
@@ -363,27 +363,29 @@ See above.</p>
 Resets the output format for the given <tt>FFMS_VideoSource</tt> object so that no conversion takes place. Note that the results of this function may vary wildly, particularly if the video changes resolution mid-stream. If you call it, you'd better call <tt>FFMS_GetFrame</tt> afterwards and examine the properties to see what you actually ended up with.
 </p>
 
-<h3>FFMS_SetPP - sets postprocessing options</h3>
-<h5 class="deprecated">DEPRECATED</h5>
-<pre>int FFMS_SetPP(FFMS_VideoSource *V, const char *PP, FFMS_ErrorInfo *ErrorInfo)</pre>
-<p>
-Sets the postprocessing filter chain that will be applied to frames retrieved from the given <tt>FFMS_VideoSource</tt> object by all further calls to <tt>FFMS_GetFrame</tt> and <tt>FFMS_GetFrameByTime</tt> until the next call to <tt>FFMS_SetPP</tt> or <tt>FFMS_ResetPP</tt>. The filter chain is described by a text string; see the PP string format section below for details.
+<h3>FFMS_SetInputFormatV - override the source format for video frames</h3>
+<pre>int FFMS_SetInputFormatV(FFMS_VideoSource *V, int ColorSpace, int ColorRange, int PixelFormat,
+    FFMS_ErrorInfo *ErrorInfo)</pre>
+<p>Override the source colorspace passed to SWScale for conversions and resizing for all further calls to <tt>FFMS_GetFrame</tt> and <tt>FFMS_GetFrameByTime</tt>, until next time you call <tt>FFMS_SetInputFormatV</tt> or <tt>FFMS_ResetInputFormatV</tt>. You can change the input format at any time without having to reinitialize the <tt>FFMS_VideoSource</tt> object or anything else. This is intended primarily for compatibility with programs which use the wrong YUV colorspace when converting to or from RGB, but can also be useful for files which have incorrect colorspace flags. Values passed are not checked for sanity; if you wish you may tell FFMS2 to pretend that a RGB files is actually YUV using this function, but doing so is unlikely to have useful results. This function only has an effect if the output format is also set with <tt>FFMS_SetOutputFormatV2</tt>. Added in version 2.17.1.0.
+</p>
 <h4>Arguments</h4>
 <p><b><tt>FFMS_VideoSource *V</tt></b><br />
-A pointer to the <tt>FFMS_VideoSource</tt> object that represents the video stream you want to change the postprocessing settings for.</p>
-<p><b><tt>const char *PP</tt></b><br />
-A string describing the desired postprocessing. See the PP string format section below for details. Pass <tt>NULL</tt> or an empty string to disable postprocessing.</p>
+A pointer to the <tt>FFMS_VideoSource</tt> object that represents the video stream you want to change the input format for.</p>
+<p><b><tt>int ColorSpace</tt></b><br />
+The desired input colorspace, or FFMS_CS_UNSPECIFIED to leave it unchanged.</p>
+<p><b><tt>int ColorRange</tt></b><br />
+The desired input colorrange, or FFMS_CR_UNSPECIFIED to leave it unchanged.</p>
+<p><b><tt>int PixelFormat</tt></b><br />
+The desired input pixel format; see <tt>FFMS_GetPixFmt</tt>. <tt>FFMS_GetPixFmt("")</tt> will leave the pixel format unchanged.</p>
 <p><b><tt>FFMS_ErrorInfo *ErrorInfo</tt></b><br />
 See above.</p>
 <h4>Return values</h4>
 <p>Returns 0 on success. Returns non-0 and sets <tt>ErrorMsg</tt> on failure.</p>
-</p>
 
-<h3>FFMS_ResetPP - resets postprocessing options</h3>
-<h5 class="deprecated">DEPRECATED</h5>
-<pre>void FFMS_ResetPP(FFMS_VideoSource *V)</pre>
+<h3>FFMS_ResetInputFormatV - resets the video input format</h3>
+<pre>void FFMS_ResetInputFormatV(FFMS_VideoSource *V)</pre>
 <p>
-Resets the postprocessing filter chain that will be applied to frames retrieved from the given <tt>FFMS_VideoSource</tt> object by all further calls to <tt>FFMS_GetFrame</tt> and <tt>FFMS_GetFrameByTime</tt> until the next call to <tt>FFMS_SetPP</tt> or <tt>FFMS_ResetPP</tt> so that no postprocessing will be applied. Is equivalent to <tt>FFMS_SetPP(VideoSource, NULL, ErrorInfo)</tt> but is more efficient.
+Resets the input format for the given <tt>FFMS_VideoSource</tt> object to the values specified in the source file.
 </p>
 
 <h3>FFMS_DestroyIndex - deallocates an index object</h3>
@@ -401,6 +403,12 @@ Checks which source module (libavformat, Haali's Matroska parsing library, or Ha
 <pre>int FFMS_GetSourceTypeI(FFMS_Index *Indexer)</pre>
 <p>
 Does the same thing as <tt>FFMS_GetSourceType</tt>, but takes an indexer instead of an index.
+</p>
+
+<h3>FFMS_GetErrorHandling - gets which error handling mode was used when creating the given index</h3>
+<pre>int FFMS_GetErrorHandling(FFMS_Index *Index)</pre>
+<p>
+Returns the value of the ErrorHandling parameter which was passed to FFMS_DoIndexing or FFMS_MakeIndex.
 </p>
 
 <h3>FFMS_GetFirstTrackOfType - gets the track number of the first track of a given type</h3>
@@ -586,7 +594,7 @@ The chosen demuxer gets used for both indexing and decoding later on. Only force
 <pre>FFMS_Index *FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask,
 	TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate,
 	FFMS_ErrorInfo *ErrorInfo)</pre>
-<p>Does the exact same thing as <tt>FFMS_MakeIndex</tt>, but takes an indexer object instead of a source filename. Return values and arguments are identical to <tt>FFMS_MakeIndex</tt>; see that function for details. See the Indexing and You section for more details about indexing. Note that calling this function destroys the <tt>FFMS_Indexer</tt> object and frees the memory allocated by <tt>FFMS_CreateIndexer</tt>.</p>
+<p>Does the exact same thing as <tt>FFMS_MakeIndex</tt>, but takes an indexer object instead of a source filename. Return values and arguments are identical to <tt>FFMS_MakeIndex</tt>; see that function for details. See the Indexing and You section for more details about indexing. Note that calling this function destroys the <tt>FFMS_Indexer</tt> object and frees the memory allocated by <tt>FFMS_CreateIndexer</tt> (even if indexing fails for any reason).</p>
 
 <h3>FFMS_CancelIndexing - destroys the given indexer object</h3>
 <pre>void FFMS_CancelIndexing(FFMS_Indexer *Indexer)</pre>
@@ -1018,51 +1026,6 @@ b: FF_BI_TYPE (no good explanation available)
 <p>
 Example string: <tt>%sourcefile%_track%trackzn%.w64</tt>
 </p>
-
-
-<h2>PP string format</h2>
-<pre>
-Available postprocessing filters:
-Filters                        Options
-short  long name       short   long option     Description
-*      *               a       autoq           CPU power dependent enabler
-                       c       chrom           chrominance filtering enabled
-                       y       nochrom         chrominance filtering disabled
-                       n       noluma          luma filtering disabled
-hb     hdeblock        (2 threshold)           horizontal deblocking filter
-       1. difference factor: default=32, higher -&gt; more deblocking
-       2. flatness threshold: default=39, lower -&gt; more deblocking
-                       the h &amp; v deblocking filters share these
-                       so you can't set different thresholds for h / v
-vb     vdeblock        (2 threshold)           vertical deblocking filter
-ha     hadeblock       (2 threshold)           horizontal deblocking filter
-va     vadeblock       (2 threshold)           vertical deblocking filter
-h1     x1hdeblock                              experimental h deblock filter 1
-v1     x1vdeblock                              experimental v deblock filter 1
-dr     dering                                  deringing filter
-al     autolevels                              automatic brightness / contrast
-f      fullyrange                              stretch luminance to (0..255)
-lb     linblenddeint                           linear blend deinterlacer
-li     linipoldeint                            linear interpolating deinterlace
-ci     cubicipoldeint                          cubic interpolating deinterlacer
-md     mediandeint                             median deinterlacer
-fd     ffmpegdeint                             ffmpeg deinterlacer
-l5     lowpass5                                FIR lowpass deinterlacer
-de     default                                 hb:a,vb:a,dr:a
-fa     fast                                    h1:a,v1:a,dr:a
-ac                                             ha:a:128:7,va:a,dr:a
-tn     tmpnoise        (3 threshold)           temporal noise reducer
-                     1. &lt;= 2. &lt;= 3.            larger -&gt; stronger filtering
-fq     forceQuant      &lt;quantizer&gt;             force quantizer
-Usage:
-&lt;filterName&gt;[:&lt;option&gt;[:&lt;option&gt;...]][[,|/][-]&lt;filterName&gt;[:&lt;option&gt;...]]...
-long form example:
-vdeblock:autoq/hdeblock:autoq/linblenddeint    default,-vdeblock
-short form example:
-vb:a/hb:a/lb                                   de,-vb
-more examples:
-tn:64:128:256
-</pre>
 
 </div>
 
