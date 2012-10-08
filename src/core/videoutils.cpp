@@ -33,7 +33,7 @@ extern int CPUFeatures;
 
 /***************************
 **
-** Functions related to initializing swscale and libpostproc contexts, etc.
+** Functions related to initializing swscale contexts, etc.
 **
 ***************************/
 
