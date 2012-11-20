@@ -54,9 +54,10 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *userData, VSCor
 	const char *DemuxerStr = vsapi->propGetData(in, "demuxer", 0, &err);
 
 	std::string DefaultCache(Source);
-	DefaultCache.append(".ffindex");
-	if (!CacheFile && !strcmp(CacheFile, ""))
+	if (!CacheFile || !strcmp(CacheFile, "")) {
+		DefaultCache.append(".ffindex");
 		CacheFile = DefaultCache.c_str();
+	}
 
 	if (!AudioFile || !strcmp(AudioFile, "")) {
 		vsapi->setError(out, "Index: Specifying an empty audio filename is not allowed");
@@ -245,8 +246,7 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *userData, VSCo
 		return;
 	}
 
-	const VSNodeRef *node = vsapi->createFilter(in, out, "Source", VSVideoSource::Init, VSVideoSource::GetFrame, VSVideoSource::Free, fmSerial, 0,vs, core);
-	vsapi->propSetNode(out, "clip", node, 0);
+	vsapi->createFilter(in, out, "Source", VSVideoSource::Init, VSVideoSource::GetFrame, VSVideoSource::Free, fmSerial, 0,vs, core);
 
 	FFMS_DestroyIndex(Index);
 }
@@ -264,7 +264,7 @@ static void VS_CC GetVersion(const VSMap *in, VSMap *out, void *userData, VSCore
 	int Version = FFMS_GetVersion();
 	char buf[100];
 	sprintf(buf, "%d.%d.%d.%d", Version >> 24, (Version & 0xFF0000) >> 16, (Version & 0xFF00) >> 8, Version & 0xFF);
-	vsapi->propSetData(out, "Version", buf, 0, 0);
+	vsapi->propSetData(out, "version", buf, 0, 0);
 }
 
 VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin *plugin) {
