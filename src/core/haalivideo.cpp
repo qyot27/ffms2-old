@@ -61,12 +61,7 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Could not open video codec");
 
-#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(52,111,0)
 	CodecContext->thread_count = DecodingThreads;
-#else
-	if (avcodec_thread_init(CodecContext, DecodingThreads))
-		CodecContext->thread_count = 1;
-#endif
 
 	if (CodecContext->codec->id == FFMS_ID(H264) && SourceMode == FFMS_SOURCE_HAALIMPEG)
 		BitStreamFilter = av_bitstream_filter_init("h264_mp4toannexb");
@@ -137,6 +132,7 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 		// align input data
 		Packet.size = pMMF->GetActualDataLength();
 		Packet.data = static_cast<uint8_t *>(av_mallocz(Packet.size + FF_INPUT_BUFFER_PADDING_SIZE));
+		uint8_t *OriginalData = Packet.data;
 		memcpy(Packet.data, Data, Packet.size);
 		Packet.flags = pMMF->IsSyncPoint() == S_OK ? AV_PKT_FLAG_KEY : 0;
 
@@ -148,7 +144,15 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 		}
 
 		bool FrameFinished = DecodePacket(&Packet);
+
+		// av_bitstream_filter_filter() can, if it feels like it, reallocate the input buffer and change the pointer.
+		// If it does that, we need to free both the input buffer we allocated ourselves and the buffer lavc allocated.
+		if (Packet.data != OriginalData) {
+			av_free(Packet.data);
+			Packet.data = OriginalData;
+		}
 		av_free(Packet.data);
+
 		if (FrameFinished)
 			return;
 	}
