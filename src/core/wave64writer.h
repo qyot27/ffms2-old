@@ -28,20 +28,20 @@
 
 // this is to avoid depending on windows.h etc.
 typedef struct FFMS_WAVEFORMATEX { 
-	uint16_t wFormatTag; 
-	uint16_t nChannels; 
-	uint32_t nSamplesPerSec; 
-	uint32_t nAvgBytesPerSec; 
-	uint16_t nBlockAlign; 
-	uint16_t wBitsPerSample; 
-	uint16_t cbSize; 
+	uint16_t wFormatTag;
+	uint16_t nChannels;
+	uint32_t nSamplesPerSec;
+	uint32_t nAvgBytesPerSec;
+	uint16_t nBlockAlign;
+	uint16_t wBitsPerSample;
+	uint16_t cbSize;
 } FFMS_WAVEFORMATEX;
 
 class Wave64Writer {
 public:
 	Wave64Writer(const char *Filename, uint16_t BitsPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat);
 	~Wave64Writer();
-	void WriteData(void *Data, std::streamsize Length);
+	void WriteData(AVFrame const& Frame);
 private:
 	ffms_fstream WavFile;
 	int32_t BytesPerSample;

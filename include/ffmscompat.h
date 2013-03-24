@@ -71,6 +71,15 @@
 #       define FFMS_CodecID AVCodecID
 #       undef CodecID
 #   endif
+#   if VERSION_CHECK(LIBAVCODEC_VERSION_INT, <, 54, 28, 0, 54, 59, 100)
+#       define avcodec_free_frame av_free
+#   endif
+#endif
+
+#ifdef LIBAVUTIL_VERSION_INT
+#	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 51, 27, 0, 51, 46, 100)
+#		define av_get_packed_sample_fmt(fmt) (fmt < AV_SAMPLE_FMT_U8P ? fmt : fmt - (AV_SAMPLE_FMT_U8P - AV_SAMPLE_FMT_U8))
+#	endif
 #endif
 
 #endif // FFMSCOMPAT_H
